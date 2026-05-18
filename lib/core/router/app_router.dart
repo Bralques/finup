@@ -19,6 +19,7 @@ import '../../features/notifications/presentation/pages/notifications_page.dart'
 import '../../features/debts/presentation/pages/debts_page.dart';
 import '../../features/external_debts/presentation/pages/external_debts_page.dart';
 import '../../features/analysis/presentation/pages/analysis_page.dart';
+import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../shared/widgets/main_scaffold.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -64,6 +65,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/diary', builder: (_, __) => const ExpenseDiaryPage()),
           GoRoute(path: '/income-sources', builder: (_, __) => const IncomeSourcesPage()),
           GoRoute(path: '/notifications', builder: (_, __) => const NotificationsPage()),
+          GoRoute(path: '/profile', builder: (_, __) => const ProfilePage()),
           GoRoute(path: '/debts', builder: (_, __) => const DebtsPage()),
           GoRoute(path: '/external-debts', builder: (_, __) => const ExternalDebtsPage()),
           GoRoute(path: '/analysis', builder: (_, __) => const AnalysisPage()),
