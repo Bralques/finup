@@ -59,12 +59,13 @@ class AccountsPage extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => _AddAccountSheet(onSave: (name, type, balance, color) async {
+      builder: (ctx) => _AddAccountSheet(onSave: (name, type, balance, color, creditLimit) async {
         await ref.read(accountsProvider.notifier).createAccount(
               name: name,
               type: type,
               balance: balance,
               color: color,
+              creditLimit: creditLimit,
             );
         if (ctx.mounted) Navigator.pop(ctx);
       }),
@@ -113,6 +114,8 @@ class _AccountCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (_isCard) return _buildCreditCard(context, ref);
+
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -125,7 +128,8 @@ class _AccountCard extends ConsumerWidget {
           child: Icon(account.type.icon, color: account.color, size: 22),
         ),
         title: Text(account.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(account.type.label, style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+        subtitle: Text(account.type.label,
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -137,38 +141,144 @@ class _AccountCard extends ConsumerWidget {
                   account.balance.toCurrency(),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: _isCard
-                        ? AppColors.expense
-                        : account.balance >= 0
-                            ? AppColors.income
-                            : AppColors.expense,
+                    color: account.balance >= 0 ? AppColors.income : AppColors.expense,
                     fontSize: 15,
                   ),
                 ),
-                Text(
-                  _isCard ? 'Ver fatura' : 'Toque para ajustar',
-                  style: TextStyle(
-                    color: _isCard
-                        ? AppColors.accent.withValues(alpha: 0.8)
-                        : Colors.grey.shade400,
-                    fontSize: 10,
-                    fontWeight: _isCard ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
+                Text('Toque para ajustar',
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10)),
               ],
             ),
             const SizedBox(width: 4),
-            Icon(
-              _isCard ? Icons.credit_card_rounded : Icons.edit_outlined,
-              size: 16,
-              color: _isCard ? AppColors.accent : Colors.grey.shade400,
-            ),
+            Icon(Icons.edit_outlined, size: 16, color: Colors.grey.shade400),
           ],
         ),
-        onTap: () => _isCard
-            ? _showInvoiceSheet(context, ref)
-            : _showAdjustBalanceSheet(context, ref),
+        onTap: () => _showAdjustBalanceSheet(context, ref),
         onLongPress: () => _showDeleteDialog(context, ref),
+      ),
+    );
+  }
+
+  Widget _buildCreditCard(BuildContext context, WidgetRef ref) {
+    final invoiceAsync = ref.watch(cardInvoiceProvider(account.id));
+    final limit = account.creditLimit;
+
+    return GestureDetector(
+      onTap: () => _showInvoiceSheet(context, ref),
+      onLongPress: () => _showDeleteDialog(context, ref),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: account.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.credit_card_rounded,
+                        color: account.color, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(account.name,
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
+                        Text(account.type.label,
+                            style: TextStyle(
+                                color: Colors.grey.shade500, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      invoiceAsync.when(
+                        loading: () => const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 1.5)),
+                        error: (_, __) => const SizedBox.shrink(),
+                        data: (inv) => Text(
+                          inv.total.toCurrency(),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.expense,
+                              fontSize: 15),
+                        ),
+                      ),
+                      Text('Ver fatura',
+                          style: TextStyle(
+                              color: AppColors.accent.withValues(alpha: 0.8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ],
+              ),
+
+              // Limit progress bar (only if limit is set)
+              if (limit != null && limit > 0)
+                invoiceAsync.when(
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                  data: (inv) {
+                    final used = inv.total;
+                    final available = (limit - used).clamp(0.0, limit);
+                    final ratio = (used / limit).clamp(0.0, 1.0);
+                    final barColor = ratio >= 0.9
+                        ? AppColors.expense
+                        : ratio >= 0.7
+                            ? const Color(0xFFFF8F00)
+                            : AppColors.income;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${available.toCurrency()} disponível',
+                                style: TextStyle(
+                                    color: barColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                'Limite ${limit.toCurrency()}',
+                                style: const TextStyle(
+                                    color: Color(0xFF666666), fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: ratio,
+                              minHeight: 5,
+                              backgroundColor: const Color(0xFF2A2A2A),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(barColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -328,7 +438,7 @@ class _AccountCard extends ConsumerWidget {
 }
 
 class _AddAccountSheet extends StatefulWidget {
-  final Future<void> Function(String name, AccountType type, double balance, Color color) onSave;
+  final Future<void> Function(String name, AccountType type, double balance, Color color, double? creditLimit) onSave;
 
   const _AddAccountSheet({required this.onSave});
 
@@ -339,6 +449,7 @@ class _AddAccountSheet extends StatefulWidget {
 class _AddAccountSheetState extends State<_AddAccountSheet> {
   final _nameCtrl = TextEditingController();
   final _balanceCtrl = TextEditingController(text: '0');
+  final _limitCtrl = TextEditingController();
   AccountType _type = AccountType.checking;
   Color _color = AppColors.primary;
   bool _saving = false;
@@ -347,12 +458,14 @@ class _AddAccountSheetState extends State<_AddAccountSheet> {
   void dispose() {
     _nameCtrl.dispose();
     _balanceCtrl.dispose();
+    _limitCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
+    final isCard = _type == AccountType.creditCard;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 16, 16, bottom + 16),
@@ -382,6 +495,18 @@ class _AddAccountSheetState extends State<_AddAccountSheet> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
             decoration: const InputDecoration(labelText: 'Saldo inicial', prefixText: 'R\$ '),
           ),
+          if (isCard) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: _limitCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Limite do cartão',
+                prefixText: 'R\$ ',
+                helperText: 'Deixe em branco para não definir limite',
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           const Text('Cor', style: TextStyle(fontSize: 13, color: Colors.grey)),
           const SizedBox(height: 8),
@@ -411,7 +536,11 @@ class _AddAccountSheetState extends State<_AddAccountSheet> {
                 final balance = double.tryParse(
                   _balanceCtrl.text.replaceAll(',', '.'),
                 ) ?? 0;
-                await widget.onSave(_nameCtrl.text, _type, balance, _color);
+                final limitText = _limitCtrl.text.replaceAll(',', '.');
+                final creditLimit = limitText.isNotEmpty
+                    ? double.tryParse(limitText)
+                    : null;
+                await widget.onSave(_nameCtrl.text, _type, balance, _color, creditLimit);
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -548,6 +677,73 @@ class _InvoiceSheetContent extends ConsumerWidget {
                       style: const TextStyle(
                           color: Color(0xFF666666), fontSize: 12),
                     ),
+                    // Limit info inside invoice
+                    if (account.creditLimit != null && account.creditLimit! > 0) ...[
+                      const SizedBox(height: 16),
+                      const Divider(color: Color(0xFF2A2A2A)),
+                      const SizedBox(height: 12),
+                      () {
+                        final limit = account.creditLimit!;
+                        final used = invoice.total;
+                        final available = (limit - used).clamp(0.0, limit);
+                        final ratio = (used / limit).clamp(0.0, 1.0);
+                        final barColor = ratio >= 0.9
+                            ? AppColors.expense
+                            : ratio >= 0.7
+                                ? const Color(0xFFFF8F00)
+                                : AppColors.income;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Disponível',
+                                        style: TextStyle(
+                                            color: Color(0xFF888888),
+                                            fontSize: 11)),
+                                    const SizedBox(height: 2),
+                                    Text(available.toCurrency(),
+                                        style: TextStyle(
+                                            color: barColor,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 16)),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Text('Limite total',
+                                        style: TextStyle(
+                                            color: Color(0xFF888888),
+                                            fontSize: 11)),
+                                    const SizedBox(height: 2),
+                                    Text(limit.toCurrency(),
+                                        style: const TextStyle(
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: LinearProgressIndicator(
+                                value: ratio,
+                                minHeight: 6,
+                                backgroundColor: const Color(0xFF2A2A2A),
+                                valueColor: AlwaysStoppedAnimation<Color>(barColor),
+                              ),
+                            ),
+                          ],
+                        );
+                      }(),
+                    ],
                   ],
                 ),
               ),

@@ -26,6 +26,7 @@ class AccountModel {
   final String currency;
   final Color color;
   final bool isActive;
+  final double? creditLimit;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -38,6 +39,7 @@ class AccountModel {
     this.currency = 'BRL',
     required this.color,
     this.isActive = true,
+    this.creditLimit,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -52,6 +54,7 @@ class AccountModel {
       currency: map['currency'] as String? ?? 'BRL',
       color: Color(int.parse((map['color'] as String? ?? '0xFF1E88E5').replaceFirst('#', '0xFF'))),
       isActive: map['is_active'] as bool? ?? true,
+      creditLimit: (map['credit_limit'] as num?)?.toDouble(),
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -65,6 +68,7 @@ class AccountModel {
         'currency': currency,
         'color': '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}',
         'is_active': isActive,
+        'credit_limit': creditLimit,
       };
 
   AccountModel copyWith({
@@ -76,6 +80,8 @@ class AccountModel {
     String? currency,
     Color? color,
     bool? isActive,
+    double? creditLimit,
+    bool clearCreditLimit = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -88,6 +94,7 @@ class AccountModel {
       currency: currency ?? this.currency,
       color: color ?? this.color,
       isActive: isActive ?? this.isActive,
+      creditLimit: clearCreditLimit ? null : (creditLimit ?? this.creditLimit),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

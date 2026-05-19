@@ -33,6 +33,7 @@ class AccountsNotifier extends AsyncNotifier<List<AccountModel>> {
     required double balance,
     required Color color,
     String currency = 'BRL',
+    double? creditLimit,
   }) async {
     final userId = SupabaseService.currentUserId!;
     final newAccount = AccountModel(
@@ -43,6 +44,7 @@ class AccountsNotifier extends AsyncNotifier<List<AccountModel>> {
       balance: balance,
       currency: currency,
       color: color,
+      creditLimit: creditLimit,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
