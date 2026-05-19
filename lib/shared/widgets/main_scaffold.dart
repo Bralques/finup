@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'calculator_sheet.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;
@@ -24,6 +25,14 @@ class MainScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       body: child,
+      floatingActionButton: FloatingActionButton.small(
+        heroTag: 'calc_fab',
+        onPressed: () => showCalculator(context),
+        backgroundColor: const Color(0xFF1C1C1C),
+        elevation: 2,
+        child: const Icon(Icons.calculate_outlined, color: Colors.white70, size: 20),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Color(0xFF141414),
@@ -123,6 +132,8 @@ class MainScaffold extends StatelessWidget {
                       onTap: () { Navigator.pop(ctx); context.go('/notifications'); }),
                   _GridItem(icon: Icons.manage_accounts_rounded, label: 'Conta',
                       onTap: () { Navigator.pop(ctx); context.go('/profile'); }),
+                  _GridItem(icon: Icons.calculate_outlined, label: 'Calculadora',
+                      onTap: () { Navigator.pop(ctx); showCalculator(context); }),
                 ],
               ),
             ),

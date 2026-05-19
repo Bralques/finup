@@ -61,13 +61,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       }
 
       final msg = err?.toString() ?? '';
-      final friendlyMsg = msg.contains('already registered') || msg.contains('already been registered')
-          ? 'Este e-mail já está cadastrado. Tente entrar.'
-          : msg.contains('invalid') || msg.contains('Invalid')
-              ? 'E-mail inválido. Verifique e tente novamente.'
-              : msg.contains('weak') || msg.contains('short')
-                  ? 'Senha muito fraca. Use pelo menos 6 caracteres.'
-                  : 'Erro: $msg';
+      final friendlyMsg = msg.contains('rate limit') || msg.contains('over_email_send_rate_limit')
+          ? 'Muitas tentativas. Aguarde alguns minutos e tente novamente.'
+          : msg.contains('already registered') || msg.contains('already been registered')
+              ? 'Este e-mail já está cadastrado. Tente entrar.'
+              : msg.contains('invalid') || msg.contains('Invalid')
+                  ? 'E-mail inválido. Verifique e tente novamente.'
+                  : msg.contains('weak') || msg.contains('short')
+                      ? 'Senha muito fraca. Use pelo menos 6 caracteres.'
+                      : 'Erro ao criar conta. Tente novamente.';
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

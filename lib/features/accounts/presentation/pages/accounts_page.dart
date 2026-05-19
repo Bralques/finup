@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/extensions/currency_extension.dart';
+import '../../../../core/extensions/date_extension.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../providers/accounts_provider.dart';
 import '../../data/models/account_model.dart';
@@ -107,6 +109,8 @@ class _AccountCard extends ConsumerWidget {
 
   const _AccountCard({required this.account});
 
+  bool get _isCard => account.type == AccountType.creditCard;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Card(
@@ -133,22 +137,75 @@ class _AccountCard extends ConsumerWidget {
                   account.balance.toCurrency(),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    color: account.balance >= 0 ? AppColors.income : AppColors.expense,
+                    color: _isCard
+                        ? AppColors.expense
+                        : account.balance >= 0
+                            ? AppColors.income
+                            : AppColors.expense,
                     fontSize: 15,
                   ),
                 ),
                 Text(
-                  'Toque para ajustar',
-                  style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                  _isCard ? 'Ver fatura' : 'Toque para ajustar',
+                  style: TextStyle(
+                    color: _isCard
+                        ? AppColors.accent.withValues(alpha: 0.8)
+                        : Colors.grey.shade400,
+                    fontSize: 10,
+                    fontWeight: _isCard ? FontWeight.w600 : FontWeight.w400,
+                  ),
                 ),
               ],
             ),
             const SizedBox(width: 4),
-            Icon(Icons.edit_outlined, size: 16, color: Colors.grey.shade400),
+            Icon(
+              _isCard ? Icons.credit_card_rounded : Icons.edit_outlined,
+              size: 16,
+              color: _isCard ? AppColors.accent : Colors.grey.shade400,
+            ),
           ],
         ),
-        onTap: () => _showAdjustBalanceSheet(context, ref),
+        onTap: () => _isCard
+            ? _showInvoiceSheet(context, ref)
+            : _showAdjustBalanceSheet(context, ref),
         onLongPress: () => _showDeleteDialog(context, ref),
+      ),
+    );
+  }
+
+  void _showInvoiceSheet(BuildContext context, WidgetRef ref) {
+    final now = DateTime.now();
+    final monthName = [
+      '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ][now.month];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.92,
+        minChildSize: 0.4,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF141414),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: _InvoiceSheetContent(
+            account: account,
+            monthName: monthName,
+            scrollController: controller,
+            onPayPressed: () {
+              Navigator.pop(ctx);
+              context.go('/transactions/add', extra: {
+                'type': 'expense',
+                'description': 'Fatura $monthName - ${account.name}',
+              });
+            },
+          ),
+        ),
       ),
     );
   }
@@ -374,6 +431,222 @@ class _AddAccountSheetState extends State<_AddAccountSheet> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Invoice sheet ─────────────────────────────────────────────────────────────
+
+class _InvoiceSheetContent extends ConsumerWidget {
+  final AccountModel account;
+  final String monthName;
+  final ScrollController scrollController;
+  final VoidCallback onPayPressed;
+
+  const _InvoiceSheetContent({
+    required this.account,
+    required this.monthName,
+    required this.scrollController,
+    required this.onPayPressed,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final invoiceAsync = ref.watch(cardInvoiceProvider(account.id));
+
+    return ListView(
+      controller: scrollController,
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+      children: [
+        // Handle
+        Center(
+          child: Container(
+            width: 36, height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF333333),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Header
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: account.color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.credit_card_rounded,
+                  color: account.color, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(account.name,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16)),
+                  Text('Fatura de $monthName',
+                      style: const TextStyle(
+                          color: Color(0xFF666666), fontSize: 12)),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        invoiceAsync.when(
+          loading: () => const Center(
+              child: CircularProgressIndicator()),
+          error: (e, _) =>
+              Text('Erro: $e', style: const TextStyle(color: Colors.red)),
+          data: (invoice) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Total card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.expense.withValues(alpha: 0.2),
+                      AppColors.expense.withValues(alpha: 0.05),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: AppColors.expense.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Total da fatura',
+                        style: TextStyle(
+                            color: Color(0xFF888888), fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Text(
+                      invoice.total.toCurrency(),
+                      style: TextStyle(
+                        color: AppColors.expense,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${invoice.transactions.length} transações este mês',
+                      style: const TextStyle(
+                          color: Color(0xFF666666), fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Pay button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onPayPressed,
+                  icon: const Icon(Icons.payment_rounded, size: 18),
+                  label: const Text('Pagar fatura'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    minimumSize: const Size.fromHeight(52),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    textStyle: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+
+              if (invoice.transactions.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                const Text('Lançamentos do mês',
+                    style: TextStyle(
+                        color: Color(0xFF555555),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 1.2)),
+                const SizedBox(height: 12),
+                ...invoice.transactions.map((t) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C1C1C),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                t.description?.isNotEmpty == true
+                                    ? t.description!
+                                    : 'Sem descrição',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                t.date.toShortDate(),
+                                style: const TextStyle(
+                                    color: Color(0xFF666666),
+                                    fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          t.amount.toCurrency(),
+                          style: TextStyle(
+                            color: AppColors.expense,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )),
+              ] else ...[
+                const SizedBox(height: 40),
+                const Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.receipt_long_outlined,
+                          color: Color(0xFF333333), size: 48),
+                      SizedBox(height: 12),
+                      Text('Nenhuma despesa este mês',
+                          style: TextStyle(
+                              color: Color(0xFF555555), fontSize: 14)),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

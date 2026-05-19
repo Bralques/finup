@@ -4,6 +4,8 @@ import '../../data/models/account_model.dart';
 import '../../data/repositories/accounts_repository.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/supabase/supabase_service.dart';
+import '../../../transactions/data/models/transaction_model.dart';
+import '../../../transactions/data/repositories/transactions_repository.dart';
 
 final accountsRepositoryProvider = Provider<AccountsRepository>((ref) => AccountsRepository());
 
@@ -92,6 +94,33 @@ final accountByIdProvider = Provider.family<AccountModel?, String>((ref, id) {
     return null;
   }
 });
+
+// Provider for credit card invoice (current month expenses)
+final _txRepoProvider = Provider<TransactionsRepository>((ref) => TransactionsRepository());
+
+final cardInvoiceProvider = FutureProvider.family<_CardInvoice, String>((ref, accountId) async {
+  final repo = ref.read(_txRepoProvider);
+  final now = DateTime.now();
+  final from = DateTime(now.year, now.month, 1);
+  final to = DateTime(now.year, now.month + 1, 0);
+
+  final transactions = await repo.getTransactions(
+    accountId: accountId,
+    from: from,
+    to: to,
+    type: TransactionType.expense,
+    limit: 200,
+  );
+
+  final total = transactions.fold<double>(0, (sum, t) => sum + t.amount);
+  return _CardInvoice(total: total, transactions: transactions);
+});
+
+class _CardInvoice {
+  final double total;
+  final List<TransactionModel> transactions;
+  const _CardInvoice({required this.total, required this.transactions});
+}
 
 // Default colors for new accounts
 const accountDefaultColors = [
