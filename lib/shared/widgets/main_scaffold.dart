@@ -25,58 +25,74 @@ class MainScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
       body: child,
-      floatingActionButton: FloatingActionButton.small(
-        heroTag: 'calc_fab',
-        onPressed: () => showCalculator(context),
-        backgroundColor: const Color(0xFF1C1C1C),
-        elevation: 2,
-        child: const Icon(Icons.calculate_outlined, color: Colors.white70, size: 20),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Color(0xFF141414),
           border: Border(top: BorderSide(color: Color(0xFF222222), width: 1)),
         ),
-        child: NavigationBar(
-          selectedIndex: idx,
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          onDestinationSelected: (i) {
-            switch (i) {
-              case 0: context.go('/dashboard');
-              case 1: context.go('/transactions');
-              case 2: context.go('/accounts');
-              case 3: context.go('/reports');
-              case 4: _showMore(context);
-            }
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Início',
+        child: Stack(
+          children: [
+            NavigationBar(
+              selectedIndex: idx,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              elevation: 0,
+              onDestinationSelected: (i) {
+                switch (i) {
+                  case 0: context.go('/dashboard');
+                  case 1: context.go('/transactions');
+                  case 2: context.go('/accounts');
+                  case 3: context.go('/reports');
+                  case 4: _showMore(context);
+                }
+              },
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home_rounded),
+                  label: 'Início',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.receipt_long_outlined),
+                  selectedIcon: Icon(Icons.receipt_long_rounded),
+                  label: 'Transações',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.account_balance_outlined),
+                  selectedIcon: Icon(Icons.account_balance_rounded),
+                  label: 'Contas',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.bar_chart_outlined),
+                  selectedIcon: Icon(Icons.bar_chart_rounded),
+                  label: 'Relatórios',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.grid_view_rounded),
+                  selectedIcon: Icon(Icons.grid_view_rounded),
+                  label: 'Mais',
+                ),
+              ],
             ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long_rounded),
-              label: 'Transações',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.account_balance_outlined),
-              selectedIcon: Icon(Icons.account_balance_rounded),
-              label: 'Contas',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.bar_chart_outlined),
-              selectedIcon: Icon(Icons.bar_chart_rounded),
-              label: 'Relatórios',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.grid_view_rounded),
-              selectedIcon: Icon(Icons.grid_view_rounded),
-              label: 'Mais',
+            Positioned(
+              right: 8,
+              top: 6,
+              child: GestureDetector(
+                onTap: () => showCalculator(context),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF272727),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.calculate_outlined,
+                    color: Colors.white54,
+                    size: 17,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
