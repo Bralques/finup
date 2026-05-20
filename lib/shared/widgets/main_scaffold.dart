@@ -14,7 +14,7 @@ class MainScaffold extends StatelessWidget {
     if (loc.startsWith('/reports')) return 3;
     if (['/budgets', '/goals', '/fixed-bills', '/diary',
          '/income-sources', '/notifications', '/debts',
-         '/external-debts', '/profile'].any(loc.startsWith)) return 4;
+         '/external-debts', '/profile', '/cards'].any(loc.startsWith)) return 4;
     return 0;
   }
 
@@ -132,6 +132,8 @@ class MainScaffold extends StatelessWidget {
                       onTap: () { Navigator.pop(ctx); context.go('/notifications'); }),
                   _GridItem(icon: Icons.manage_accounts_rounded, label: 'Conta',
                       onTap: () { Navigator.pop(ctx); context.go('/profile'); }),
+                  _GridItem(icon: Icons.credit_card_rounded, label: 'Cartões',
+                      onTap: () { Navigator.pop(ctx); context.go('/cards'); }),
                   _GridItem(icon: Icons.calculate_outlined, label: 'Calculadora',
                       onTap: () { Navigator.pop(ctx); showCalculator(context); }),
                 ],
