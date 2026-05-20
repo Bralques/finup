@@ -1,35 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" fill="none">
-  <defs>
-    <linearGradient id="textGrad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#6B35FF"/>
-      <stop offset="48%"  stop-color="#C040FF"/>
-      <stop offset="100%" stop-color="#FF5733"/>
-    </linearGradient>
-    <linearGradient id="lineGrad" x1="0" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
-      <stop offset="0%"   stop-color="#6B35FF" stop-opacity="0"/>
-      <stop offset="35%"  stop-color="#D4FF57"/>
-      <stop offset="65%"  stop-color="#FF5733"/>
-      <stop offset="100%" stop-color="#FF5733" stop-opacity="0"/>
-    </linearGradient>
-    <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stop-color="#D4FF57"/>
-      <stop offset="100%" stop-color="#FF5733"/>
-    </linearGradient>
-  </defs>
-
-  <!-- Spark / seta acima do i -->
-  <polygon points="77,0 81,9 73,9" fill="url(#sparkGrad)"/>
-
-  <!-- Wordmark: finup em negrito com gradiente -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 54" fill="none">
   <text
-    x="2" y="48"
-    font-family="'Inter','SF Pro Display','Helvetica Neue',system-ui,sans-serif"
+    x="2" y="44"
+    font-family="'SF Pro Display','Inter','Helvetica Neue',system-ui,sans-serif"
     font-size="46"
-    font-weight="900"
-    letter-spacing="-2.5"
-    fill="url(#textGrad)"
+    font-weight="700"
+    letter-spacing="-3"
+    fill="white"
   >finup</text>
-
-  <!-- Linha accent embaixo -->
-  <rect x="2" y="54" width="196" height="3" rx="1.5" fill="url(#lineGrad)"/>
 </svg>
