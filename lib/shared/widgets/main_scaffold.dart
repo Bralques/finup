@@ -24,7 +24,39 @@ class MainScaffold extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
-      body: child,
+      body: Stack(
+        children: [
+          child,
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: GestureDetector(
+              onTap: () => showCalculator(context),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1C1C),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFF333333)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.calculate_outlined,
+                  color: Colors.white60,
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Color(0xFF141414),
@@ -73,26 +105,6 @@ class MainScaffold extends StatelessWidget {
                   label: 'Mais',
                 ),
               ],
-            ),
-            Positioned(
-              right: 8,
-              top: 6,
-              child: GestureDetector(
-                onTap: () => showCalculator(context),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF272727),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.calculate_outlined,
-                    color: Colors.white54,
-                    size: 17,
-                  ),
-                ),
-              ),
             ),
           ],
         ),
